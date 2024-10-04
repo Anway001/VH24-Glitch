@@ -1,112 +1,184 @@
 package div.dablank.hackethonproject
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.Button
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.FloatingActionButton
-import androidx.compose.material.Icon
-import androidx.compose.material.LinearProgressIndicator
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.*
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.Polyline
+import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.delay
-@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
+import kotlin.random.Random
+
 @OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter", "UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun DeliveryScreen(navController: NavController) {
-    var selectedRoute by remember { mutableStateOf<String?>(null) }
+fun DeliveryGameScreen(navController: NavController, startingLocation: LatLng) {
+    var selectedRoute by remember { mutableStateOf<List<LatLng>?>(null) }
     var progress by remember { mutableStateOf(0f) }
-    var timeTaken by remember { mutableStateOf(0) }
+    var timeRemaining by remember { mutableStateOf(60) }
     var trafficEvent by remember { mutableStateOf<String?>(null) }
+    var gameOver by remember { mutableStateOf(false) }
+    var deliveryCompleted by remember { mutableStateOf(false) }
+    var deliveryPosition by remember { mutableStateOf(startingLocation) }
+    var powerUp by remember { mutableStateOf<String?>(null) }
 
-    val trafficEvents = listOf("Traffic Jam!", "Roadblock!", "Clear Road", "Heavy Traffic!")
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(startingLocation, 12f)
+    }
 
+    // Define routes
+    val routeA = listOf(
+        LatLng(19.0760, 72.8777),  // Mumbai
+        LatLng(19.0822, 72.7411),
+        LatLng(19.2206, 72.8479)
+    )
+
+    val routeB = listOf(
+        LatLng(18.5204, 73.8567),  // Pune
+        LatLng(18.5246, 73.8565),
+        LatLng(18.5932, 73.9262)
+    )
+
+    // Game mechanics
     LaunchedEffect(selectedRoute) {
         if (selectedRoute != null) {
-            while (progress < 1f) {
+            while (progress < 1f && timeRemaining > 0) {
                 delay(500)
                 progress += 0.1f
-                timeTaken += 1
 
+                selectedRoute?.let {
+                    val routeLength = it.size
+                    val stepIndex = (progress * (routeLength - 1)).toInt()
+                    deliveryPosition = it[stepIndex.coerceIn(0, routeLength - 1)]
+                }
+
+                timeRemaining -= 1
+                if (timeRemaining <= 0) {
+                    gameOver = true
+                    break
+                }
+
+                // Random traffic events
                 if ((1..100).random() < 20) {
-                    trafficEvent = trafficEvents.random()
+                    trafficEvent = listOf(
+                        "Heavy Traffic",
+                        "Road Construction",
+                        "Accident Ahead",
+                        "Clear Roads",
+                        "Traffic Jam",
+                        "Police Checkpoint"
+                    ).random()
+                }
+
+                // Random power-ups
+                if ((1..100).random() < 15) {
+                    powerUp = listOf("Speed Boost", "Extra Time", "None").random()
                 }
             }
-            navController.popBackStack() // Simulate completion
+
+            if (progress >= 1f) {
+                deliveryCompleted = true
+            }
         }
     }
 
+    // Reset game function
+    fun resetGame() {
+        selectedRoute = null
+        progress = 0f
+        timeRemaining = 60
+        trafficEvent = null
+        gameOver = false
+        deliveryCompleted = false
+        powerUp = null
+    }
+
+    // UI for game
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Delivery Task") })
+            TopAppBar(title = { Text("Delivery Game") })
         },
         content = {
             Column(modifier = Modifier.padding(16.dp)) {
-                if (selectedRoute == null) {
-                    Text(text = "Select Your Route", style = MaterialTheme.typography.headlineMedium)
-
-                    Button(onClick = { selectedRoute = "Route A" }) {
-                        Text("Choose Route A - 15 mins")
+                if (gameOver) {
+                    Text(text = "Game Over! Time ran out.", color = Color.Red)
+                    Button(onClick = { resetGame() }) {
+                        Text("Try Again")
                     }
-                    Button(onClick = { selectedRoute = "Route B" }) {
-                        Text("Choose Route B - 10 mins")
+                } else if (deliveryCompleted) {
+                    Text(text = "Delivery completed! Well done.", color = Color.Green)
+                    Button(onClick = { resetGame() }) {
+                        Text("Play Again")
                     }
-                    Button(onClick = { selectedRoute = "Route C" }) {
-                        Text("Choose Route C - 12 mins")
+                } else if (selectedRoute == null) {
+                    // Route selection
+                    Text(text = "Select Your Route", style = MaterialTheme.typography.headlineSmall)
+                    Button(onClick = { selectedRoute = routeA }) {
+                        Text("Route A")
+                    }
+                    Button(onClick = { selectedRoute = routeB }) {
+                        Text("Route B")
                     }
                 } else {
-                    // Simulate delivery with moving icon
-                    Text(text = "Delivering via $selectedRoute...", style = MaterialTheme.typography.headlineSmall)
+                    // Map display
+                    Text(text = "Delivering...", style = MaterialTheme.typography.bodyLarge)
+                    Text(text = "Time Remaining: $timeRemaining seconds", color = Color.Red)
 
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp)
-                            .padding(16.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        // Animate a delivery truck/bike icon moving horizontally as progress increases
-                        val iconOffsetX = with(LocalDensity.current) { (progress * 200).toDp() }
-                        Icon(
-                            painter = painterResource(id = R.drawable.baseline_directions_bike_24), // Replace with your custom bike/truck icon
-                            contentDescription = "Delivery Vehicle",
-                            modifier = Modifier.offset(x = iconOffsetX).size(64.dp)
-                        )
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        GoogleMap(
+                            modifier = Modifier.fillMaxSize(),
+                            cameraPositionState = cameraPositionState
+                        ) {
+                            selectedRoute?.let { route ->
+                                Polyline(
+                                    points = route,
+                                    color = Color.Blue,
+                                    width = 8f
+                                )
+                            }
+
+                            selectedRoute?.let {
+                                Marker(
+                                    state = MarkerState(position = it.first()),
+                                    title = "Start"
+                                )
+                                Marker(
+                                    state = MarkerState(position = it.last()),
+                                    title = "End"
+                                )
+                            }
+
+                            Marker(
+                                state = MarkerState(position = deliveryPosition),
+                                title = "Delivery Vehicle"
+                            )
+                        }
                     }
 
-                    if (trafficEvent != null) {
-                        Text(text = "Traffic Event: $trafficEvent", color = Color.Red, modifier = Modifier.padding(8.dp))
+                    trafficEvent?.let {
+                        Text(text = "Traffic Event: $it", color = Color.Red)
                     }
 
-                    Text(text = "Time Elapsed: $timeTaken seconds", style = MaterialTheme.typography.bodyLarge)
+                    powerUp?.let {
+                        Text(text = "Power-Up: $it", color = Color.Green)
+                    }
                 }
-            }
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { navController.popBackStack() }) {
-                Text("Back")
             }
         }
     )
