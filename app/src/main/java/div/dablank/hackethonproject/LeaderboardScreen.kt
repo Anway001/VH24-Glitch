@@ -1,6 +1,5 @@
 package div.dablank.hackethonproject
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -60,78 +59,62 @@ fun LeaderboardScreen(navController: NavHostController) {
         // LazyColumn for the leaderboard entries
         LazyColumn {
             items(leaderboardData.sortedByDescending { it.score }) { player ->
-                LeaderboardPlayerRow(player)
-                Spacer(modifier = Modifier.height(8.dp)) // Space between rows
+                LeaderboardPlayerCard(player)
+                Spacer(modifier = Modifier.height(8.dp)) // Space between cards
             }
         }
     }
 }
 
 @Composable
-fun LeaderboardPlayerRow(player: Player) {
-    val animatedScore by animateFloatAsState(targetValue = player.score.toFloat())
+fun LeaderboardPlayerCard(player: Player) {
+    val rank = calculateRank(player)
 
-    Surface(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .border(2.dp, Color(0xFF90CAF9), RoundedCornerShape(10.dp))
-            .shadow(5.dp, RoundedCornerShape(10.dp))
-            .clickable { /* Navigate to player profile or details */ },
-        color = if (player.score > 100) Color(0xFFFFE082) else Color.White // Gold for top players
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Player Rank
-                Text(
-                    text = "${player.score}.",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
-                    modifier = Modifier.width(30.dp),
-                    color = if (player.score > 100) Color(0xFFFFB300) else Color.Gray // Gold for top players
-                )
-
-                // Player Name
-                Text(
-                    text = player.name,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
-                    modifier = Modifier.weight(1f)
-                )
-
-                // Player Score with animation
-                Text(
-                    text = "${animatedScore.toInt()}",
-                    style = MaterialTheme.typography.bodyLarge.copy(color = Color(0xFF388E3C)),
-                    modifier = Modifier.padding(start = 16.dp)
-                )
-            }
-
-            // Custom Score Bar
-            CustomScoreBar(score = player.score, maxScore = 150)
-        }
-    }
-}
-
-@Composable
-fun CustomScoreBar(score: Int, maxScore: Int) {
-    // Calculate the width based on the score
-    val progress = score.toFloat() / maxScore
-
-    // Custom Score Bar using Box
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(8.dp)
-            .background(Color(0xFFD1C4E9), RoundedCornerShape(4.dp)) // Background color
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .fillMaxWidth(progress) // Set width based on score progress
-                .background(Color(0xFF388E3C), RoundedCornerShape(4.dp)) // Progress color
+            .shadow(5.dp, RoundedCornerShape(10.dp)),
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (player.score > 100) Color(0xFFFFE082) else Color(0xFFFAFAFA)
         )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Medal based on rank
+            val medal = getMedal(rank)
+            Text(
+                text = medal,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 36.sp
+                ),
+                color = getMedalColor(rank)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Player Name
+            Text(
+                text = player.name,
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, fontSize = 24.sp),
+                color = Color(0xFF1976D2)
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Player Score
+            Text(
+                text = "Score: ${player.score}",
+                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
+                color = Color(0xFF388E3C)
+            )
+        }
     }
 }
 
@@ -140,3 +123,34 @@ data class Player(
     val name: String,
     val score: Int
 )
+
+// Helper function to get the medal based on rank
+fun getMedal(rank: Int): String {
+    return when (rank) {
+        1 -> "🥇"
+        2 -> "🥈"
+        3 -> "🥉"
+        else -> ""
+    }
+}
+
+// Helper function to get the medal color
+fun getMedalColor(rank: Int): Color {
+    return when (rank) {
+        1 -> Color(0xFFFFD700) // Gold
+        2 -> Color(0xFFC0C0C0) // Silver
+        3 -> Color(0xFFCD7F32) // Bronze
+        else -> Color.Transparent
+    }
+}
+
+// Helper function to calculate rank based on score
+fun calculateRank(player: Player): Int {
+    // This function could be improved to calculate actual rank based on player's score in the leaderboard
+    return when (player.score) {
+        150 -> 1
+        120 -> 2
+        100 -> 3
+        else -> 4
+    }
+}
