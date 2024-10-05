@@ -62,5 +62,11 @@ fun FoodDeliveryTrainerApp() {
         composable("animation_practice") {
             AnimationPracticeScreen(navController)
         }
+
+        // New challenge detail screen added
+        composable("challenge_detail/{challengeId}") { backStackEntry ->
+            val challengeId = backStackEntry.arguments?.getString("challengeId")
+            ChallengeDetailScreen(challengeId)
+        }
     }
 }
