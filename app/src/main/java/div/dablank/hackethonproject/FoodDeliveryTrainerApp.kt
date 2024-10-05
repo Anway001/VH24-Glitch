@@ -11,31 +11,56 @@ import div.dablank.myproject.LocationViewModel
 @Composable
 fun FoodDeliveryTrainerApp() {
     val navController = rememberNavController()
-    val context = LocalContext.current // Get the context here
-    val viewModel = remember { LocationViewModel() } // Create ViewModel here
-    val locationUtils = remember { LocationUtils(context) } // Create LocationUtils here with context
+    val context = LocalContext.current
+    val viewModel = remember { LocationViewModel() }
+    val locationUtils = remember { LocationUtils(context) }
 
     NavHost(navController = navController, startDestination = "home_screen") {
         composable("home_screen") {
-            HomeScreen(navController) // Update HomeScreen to include navigation to location selection
+            HomeScreen(navController)
         }
+        composable("player_name_input") {
+            PlayerNameInputScreen(navController)
+        }
+
         composable("locationscreen") {
             LocationSelectionScreen(navController, viewModel, locationUtils) { newLocation ->
-                // Handle the selected location data here
-                viewModel.updateLocation(newLocation) // Update the ViewModel with the new location
-                navController.navigate("game_screen") // Navigate to the game screen
+                navController.navigate("location_overview")
             }
         }
+
+        // New Location Overview Screen added
+        composable("location_overview") {
+            LocationOverviewScreen(navController)
+        }
+
         composable("game_screen") {
-            val address = "123 Main St" // This can be dynamically set based on the location selection
+            val employeeName = "Player" // Default value for employee name
             GameScreen(
                 navController = navController,
                 locationUtils = locationUtils,
                 viewModel = viewModel,
-                context = context, // Pass context to GameScreen
-                address = address
+                context = context,
+                employeeName = employeeName // Update this to the entered name later
             )
         }
-        composable("leaderboard") { LeaderboardScreen(navController) }
+
+        composable("leaderboard") {
+            LeaderboardScreen(navController)
+        }
+
+        // New challenges and daily status screens added
+        composable("view_challenges") {
+            ViewChallengesScreen(navController)
+        }
+
+        composable("daily_status") {
+            DailyStatusScreen(navController)
+        }
+
+        // New Animation Practice Screen added
+        composable("animation_practice") {
+            AnimationPracticeScreen(navController)
+        }
     }
 }

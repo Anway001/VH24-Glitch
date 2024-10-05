@@ -5,9 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -19,11 +17,12 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import div.dablank.myproject.LocationViewModel
 
+
 @Composable
 fun LocationSelectionScreen(
     navController: NavHostController,
     locationViewModel: LocationViewModel,
-    locationUtils: LocationUtils, // Added LocationUtils parameter
+    locationUtils: LocationUtils,
     onLocationSelected: (LocationData) -> Unit
 ) {
     val userLocation = remember { mutableStateOf(LatLng(0.0, 0.0)) }
@@ -50,3 +49,4 @@ fun LocationSelectionScreen(
         }
     }
 }
+

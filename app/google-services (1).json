@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "350429894452",
+    "project_id": "hackethon-8b890",
+    "storage_bucket": "hackethon-8b890.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:350429894452:android:ee78e53f835ae50471f761",
+        "android_client_info": {
+          "package_name": "div.dablank.hackethonproject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBTx0YSRtwqfofdcuXeH6-SyG3y79qB-6U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

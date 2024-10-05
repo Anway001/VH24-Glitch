@@ -1,78 +1,73 @@
 package div.dablank.hackethonproject
 
-import android.Manifest
 import android.content.Context
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
-import android.location.Geocoder
-import android.os.Looper
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.app.ActivityCompat
-import com.google.android.gms.location.*
 import div.dablank.myproject.LocationViewModel
-import java.util.Locale
+import android.os.Looper
+import com.google.android.gms.location.*
+
 
 class LocationUtils(private val context: Context) {
-    private var fusedLocationClient: FusedLocationProviderClient =
+    private val fusedLocationClient: FusedLocationProviderClient =
         LocationServices.getFusedLocationProviderClient(context)
 
-    private lateinit var locationCallback: LocationCallback
+    val location = mutableStateOf<LocationData?>(null)
 
-    // Method to check if location permissions are granted
     fun hasLocationPermission(context: Context): Boolean {
         return ActivityCompat.checkSelfPermission(this.context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(this.context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
 
-    // Method to request location updates
+    @SuppressLint("MissingPermission")
     fun requestLocationUpdates(viewModel: LocationViewModel) {
         if (hasLocationPermission(context)) {
-            val locationRequest = LocationRequest.create().apply {
-                interval = 5000 // Update interval in milliseconds
-                fastestInterval = 2000 // Fastest update interval
-                priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-            }
-
-            // Initialize the location callback
-            locationCallback = object : LocationCallback() {
-                override fun onLocationResult(locationResult: LocationResult) {
-                    for (location in locationResult.locations) {
-                        // Update the ViewModel with the new location
-                        viewModel.updateLocation(LocationData(location.latitude, location.longitude))
+            fusedLocationClient.requestLocationUpdates(
+                LocationRequest.create().apply {
+                    interval = 10000 // Update every 10 seconds
+                    fastestInterval = 5000 // Fastest update every 5 seconds
+                    priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+                },
+                object : LocationCallback() {
+                    override fun onLocationResult(locationResult: LocationResult) {
+                        super.onLocationResult(locationResult)
+                        for (location in locationResult.locations) {
+                            // Update ViewModel with the new location
+                            viewModel.setLocation(LocationData(location.latitude, location.longitude))
+                            this@LocationUtils.location.value = LocationData(location.latitude, location.longitude)
+                        }
                     }
-                }
-            }
-
-            // Request location updates
-            if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
-            } else {
-                // Handle lack of permissions (e.g., show a dialog to the user)
-            }
+                },
+                Looper.getMainLooper()
+            )
         } else {
-            // Handle lack of permissions (e.g., show a dialog to the user)
+            // Consider handling permission requests here
+            // e.g. requestPermissions() if necessary
         }
     }
 
-    // Method to reverse geocode location
-// Method to reverse geocode location
-    fun reverseGeocodeLocation(locationData: LocationData): String? {
-        val geocoder = Geocoder(context, Locale.getDefault())
+    suspend fun reverseGeocodeLocation(location: LocationData): String {
+        // Make API call to fetch address from coordinates
+        val apiKey = "YOUR_API_KEY" // Replace with your actual API key
+        val latlng = "${location.latitude},${location.longitude}"
+
         return try {
-            val addresses = geocoder.getFromLocation(locationData.latitude, locationData.longitude, 1)
-            if (addresses?.isNotEmpty() == true) {
-                addresses[0].getAddressLine(0) // Return the first address line
+            val response = RetrofitInstance.geocodingApiService.getAddressFromCoordinates(latlng, apiKey)
+            if (response.status == "OK") {
+                response.results.firstOrNull()?.formatted_address ?: "Address not found"
             } else {
-                null
+                "Error: ${response.status}"
             }
         } catch (e: Exception) {
-            e.printStackTrace()
-            null // Return null if there’s an exception
+            "Error: ${e.message}"
         }
     }
 
-
-    // Method to remove location updates
+    // Add a method to stop location updates when needed
     fun stopLocationUpdates() {
-        fusedLocationClient.removeLocationUpdates(locationCallback)
+        fusedLocationClient.removeLocationUpdates(object : LocationCallback() {})
     }
 }

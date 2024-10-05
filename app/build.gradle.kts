@@ -1,6 +1,8 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+
+
 }
 
 android {
@@ -49,8 +51,18 @@ android {
         }
     }
 }
+buildscript {
+    dependencies {
+        // Add this line
+        classpath ("com.google.gms:google-services:4.4.2")
+    }
+}
 
-dependencies {implementation("androidx.core:core-ktx:1.13.1")
+dependencies {
+
+   
+
+    implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation(platform("androidx.compose:compose-bom:2023.08.00"))

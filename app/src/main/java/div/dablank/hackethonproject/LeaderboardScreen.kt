@@ -1,151 +1,142 @@
 package div.dablank.hackethonproject
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 
 @Composable
 fun LeaderboardScreen(navController: NavHostController) {
-    val leaderboardData = listOf(
-        Player("Anway", 12, R.drawable.baseline1),
-        Player("Parth", 15, R.drawable.baseline_person_24),
-        Player("Onkar", 10, R.drawable.baseline1),
-        Player("Divyanshu", 18, R.drawable.baseline_person_24),
-        Player("Jay", 13, R.drawable.baseline1)
-    )
-
-    val sortedLeaderboard = leaderboardData.sortedBy { it.time } // Sort by time
+    // Sample leaderboard data
+    val leaderboardData = remember {
+        listOf(
+            Player(name = "Alice", score = 150),
+            Player(name = "Bob", score = 120),
+            Player(name = "Charlie", score = 100),
+            Player(name = "David", score = 90),
+            Player(name = "Eva", score = 80),
+            Player(name = "Frank", score = 70),
+            Player(name = "Grace", score = 60),
+            Player(name = "Heidi", score = 50),
+            Player(name = "Ivan", score = 40),
+            Player(name = "Judy", score = 30)
+        )
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color(0xFFBBDEFB), Color(0xFF90CAF9)),
+                    startY = 0f,
+                    endY = 1000f
+                )
+            )
+            .padding(16.dp)
     ) {
-        // Title with custom styling
         Text(
             text = "🏆 Leaderboard",
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
-            modifier = Modifier.padding(16.dp)
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, fontSize = 28.sp),
+            modifier = Modifier.padding(16.dp),
+            color = Color(0xFF1976D2) // Dark blue
         )
 
-        // Player list with enhanced visual effects
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // LazyColumn for the leaderboard entries
         LazyColumn {
-            items(sortedLeaderboard.size) { index ->
-                val player = sortedLeaderboard[index]
-                val isTopRank = index < 3 // Highlight top 3 players
-                LeaderboardPlayerRow(player, rank = index + 1, isTopRank)
-                Spacer(modifier = Modifier.height(12.dp))
+            items(leaderboardData.sortedByDescending { it.score }) { player ->
+                LeaderboardPlayerRow(player)
+                Spacer(modifier = Modifier.height(8.dp)) // Space between rows
             }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Button with extra flare
-        Button(
-            onClick = { navController.navigate("home_screen") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .shadow(8.dp, RoundedCornerShape(12.dp))
-        ) {
-            Text(text = "🏠 Back to Home", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold))
         }
     }
 }
 
 @Composable
-fun LeaderboardPlayerRow(player: Player, rank: Int, isTopRank: Boolean) {
-    // Fun rank emojis
-    val badgeEmoji = when (rank) {
-        1 -> "🥇"
-        2 -> "🥈"
-        3 -> "🥉"
-        else -> "🎖️"
-    }
+fun LeaderboardPlayerRow(player: Player) {
+    val animatedScore by animateFloatAsState(targetValue = player.score.toFloat())
 
-    // Dynamic gradient backgrounds for top ranks
-    val backgroundColor = when (rank) {
-        1 -> Brush.horizontalGradient(colors = listOf(Color(0xFFFFD700), Color(0xFFFFF176))) // Gold for first
-        2 -> Brush.horizontalGradient(colors = listOf(Color(0xFFC0C0C0), Color(0xFFE0E0E0))) // Silver for second
-        3 -> Brush.horizontalGradient(colors = listOf(Color(0xFFCD7F32), Color(0xFFDD9B6C))) // Bronze for third
-        else -> Brush.horizontalGradient(colors = listOf(Color.LightGray, Color.White))
-    }
-
-    AnimatedVisibility(
-        visible = true,
-        enter = fadeIn(),
-        exit = fadeOut()
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .border(2.dp, Color(0xFF90CAF9), RoundedCornerShape(10.dp))
+            .shadow(5.dp, RoundedCornerShape(10.dp))
+            .clickable { /* Navigate to player profile or details */ },
+        color = if (player.score > 100) Color(0xFFFFE082) else Color.White // Gold for top players
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(backgroundColor)
-                .padding(16.dp)
-                .shadow(4.dp, RoundedCornerShape(12.dp))
-        ) {
-            // Profile picture with shadow for 3D effect
-            Image(
-                painter = painterResource(id = player.profilePicture),
-                contentDescription = "Profile picture",
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape)
-                    .shadow(8.dp, CircleShape)
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            // Player details
-            Column(modifier = Modifier.weight(1f)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Player Rank
                 Text(
-                    text = "$badgeEmoji ${player.name}",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                    text = "${player.score}.",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
+                    modifier = Modifier.width(30.dp),
+                    color = if (player.score > 100) Color(0xFFFFB300) else Color.Gray // Gold for top players
                 )
+
+                // Player Name
                 Text(
-                    text = "⏱️ Delivery Time: ${player.time} minutes",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+                    text = player.name,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Player Score with animation
+                Text(
+                    text = "${animatedScore.toInt()}",
+                    style = MaterialTheme.typography.bodyLarge.copy(color = Color(0xFF388E3C)),
+                    modifier = Modifier.padding(start = 16.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
-
-            // Rank with extra boldness
-            Text(
-                text = "#${rank}",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
-                modifier = Modifier.align(Alignment.CenterVertically),
-                color = Color.Black
-            )
+            // Custom Score Bar
+            CustomScoreBar(score = player.score, maxScore = 150)
         }
+    }
+}
+
+@Composable
+fun CustomScoreBar(score: Int, maxScore: Int) {
+    // Calculate the width based on the score
+    val progress = score.toFloat() / maxScore
+
+    // Custom Score Bar using Box
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(8.dp)
+            .background(Color(0xFFD1C4E9), RoundedCornerShape(4.dp)) // Background color
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(progress) // Set width based on score progress
+                .background(Color(0xFF388E3C), RoundedCornerShape(4.dp)) // Progress color
+        )
     }
 }
 
 // Data class for Player
 data class Player(
     val name: String,
-    val time: Int, // Delivery time in minutes
-    val profilePicture: Int // Profile picture resource ID
+    val score: Int
 )
