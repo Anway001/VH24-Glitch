@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,10 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import kotlin.math.absoluteValue
 
 @Composable
 fun LeaderboardScreen(navController: NavHostController) {
@@ -49,18 +53,20 @@ fun LeaderboardScreen(navController: NavHostController) {
     ) {
         Text(
             text = "🏆 Leaderboard",
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, fontSize = 28.sp),
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, fontSize = 32.sp),
             modifier = Modifier.padding(16.dp),
-            color = Color(0xFF1976D2) // Dark blue
+            color = Color(0xFF0D47A1) // Deep Blue
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         // LazyColumn for the leaderboard entries
-        LazyColumn {
+        LazyColumn(
+            contentPadding = PaddingValues(vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             items(leaderboardData.sortedByDescending { it.score }) { player ->
                 LeaderboardPlayerCard(player)
-                Spacer(modifier = Modifier.height(8.dp)) // Space between cards
             }
         }
     }
@@ -70,14 +76,23 @@ fun LeaderboardScreen(navController: NavHostController) {
 fun LeaderboardPlayerCard(player: Player) {
     val rank = calculateRank(player)
 
+    // Slightly animated scaling effect for each card
+    val animatedScale by remember {
+        mutableStateOf(1f + (player.score % 10) / 100f)
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
-            .shadow(5.dp, RoundedCornerShape(10.dp)),
-        shape = RoundedCornerShape(10.dp),
+            .padding(horizontal = 8.dp)
+            .shadow(8.dp, RoundedCornerShape(20.dp))
+            .graphicsLayer {
+                scaleX = animatedScale
+                scaleY = animatedScale
+            },
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (player.score > 100) Color(0xFFFFE082) else Color(0xFFFAFAFA)
+            containerColor = if (player.score > 100) Color(0xFFFFE082) else Color(0xFFF1F8E9)
         )
     ) {
         Column(
@@ -90,30 +105,48 @@ fun LeaderboardPlayerCard(player: Player) {
             val medal = getMedal(rank)
             Text(
                 text = medal,
-                style = MaterialTheme.typography.bodyLarge.copy(
+                style = MaterialTheme.typography.displayMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 36.sp
+                    fontSize = 40.sp
                 ),
                 color = getMedalColor(rank)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Player Name
             Text(
                 text = player.name,
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold, fontSize = 24.sp),
-                color = Color(0xFF1976D2)
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp,
+                    letterSpacing = 1.2.sp
+                ),
+                color = Color(0xFF1B5E20) // Dark Green
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Player Score
-            Text(
-                text = "Score: ${player.score}",
-                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 20.sp),
-                color = Color(0xFF388E3C)
-            )
+            // Player Score with icon
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Star, // Star icon for score
+                    contentDescription = null,
+                    tint = Color(0xFFFFD700),
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "${player.score}",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    color = Color(0xFF4CAF50) // Bright Green for score
+                )
+            }
         }
     }
 }
@@ -130,7 +163,7 @@ fun getMedal(rank: Int): String {
         1 -> "🥇"
         2 -> "🥈"
         3 -> "🥉"
-        else -> ""
+        else -> "🎖️" // Participation medal for others
     }
 }
 
@@ -140,13 +173,12 @@ fun getMedalColor(rank: Int): Color {
         1 -> Color(0xFFFFD700) // Gold
         2 -> Color(0xFFC0C0C0) // Silver
         3 -> Color(0xFFCD7F32) // Bronze
-        else -> Color.Transparent
+        else -> Color(0xFF64B5F6) // Light Blue for others
     }
 }
 
 // Helper function to calculate rank based on score
 fun calculateRank(player: Player): Int {
-    // This function could be improved to calculate actual rank based on player's score in the leaderboard
     return when (player.score) {
         150 -> 1
         120 -> 2
